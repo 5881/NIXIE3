@@ -18,13 +18,10 @@
 
 #define PORT 7890
 #define SERVER "192.168.0.170"
+
 char buffer[512];
-
-
-uint32_t time_cor=0; //поправка системного времени
-uint32_t	ntp_stamp=1;
+uuint32_t	ntp_stamp=1;
 struct espconn *con_str_adr;
-
 static struct station_config wifi_config;
 struct ip_info ipConfig;
 os_timer_t	 rtc_timer, temp_tim;
@@ -58,10 +55,6 @@ void ICACHE_FLASH_ATTR  data_received_cb(void *arg, char *pdata, unsigned short 
     struct espconn *conn = (struct espconn *)arg;
     os_printf( "recive val: %s", pdata);
     espconn_disconnect(conn);
-    //os_free(conn);
-    //static char temp[5]="0000";
-    //temp[2]=pdata[1];
-    //temp[3]=pdata[2];
     indicate2(pdata);
 }
 
@@ -139,17 +132,15 @@ void ICACHE_FLASH_ATTR user_init(void)
     gpio_output_set(0, 0, (1 << 5), 0);
     //wifi connect
     wifi_set_event_handler_cb(wifi_handle_event_cb);
-    //os_printf("WIFI_0\r\n");
     if (wifi_set_opmode(STATION_MODE)) {
-		//os_printf("WIFI_0\r\n");
-	    wifi_station_disconnect();
+		wifi_station_disconnect();
 	    os_memcpy(wifi_config.ssid, SSID, sizeof(SSID));
     	os_memcpy(wifi_config.password, PASSWORD, sizeof(PASSWORD));
 	    wifi_config.bssid_set=0;
     	wifi_station_set_config(&wifi_config);
     	os_printf("WIFI\r\n");
 	} else
-		uart0_sendStr("ERROR: setting the station mode has failed.\r\n");
+		os_printf("ERROR: setting the station mode has failed.\r\n");
 	       
     struct espconn *conn = (struct espconn *)os_zalloc(sizeof(struct espconn));
     if (conn != NULL) {
@@ -163,8 +154,7 @@ void ICACHE_FLASH_ATTR user_init(void)
         espconn_regist_connectcb(conn, tcp_connected);
         espconn_regist_disconcb(conn, tcp_disconnected_cb);
         espconn_regist_recvcb(conn, data_received_cb);
-        //espconn_connect(conn);
-    } else os_printf("TCP connect failed!\r\n");
+        } else os_printf("TCP connect failed!\r\n");
 	con_str_adr=conn;	
 			
 	}
@@ -263,9 +253,7 @@ void ICACHE_FLASH_ATTR wifi_handle_event_cb(System_Event_t *evt){
             IP2STR(&evt->event_info.got_ip.ip),
             IP2STR(&evt->event_info.got_ip.mask),
             IP2STR(&evt->event_info.got_ip.gw));
-       // os_printf("\r\n");
-       
-       //запускаем таймер опроса температуры
+        //запускаем таймер опроса температуры
         os_timer_disarm(&temp_tim);
         os_timer_setfn(&temp_tim, (os_timer_func_t *)send_data, NULL);
         os_timer_arm(&temp_tim, 1000, 1);

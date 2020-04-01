@@ -33,7 +33,6 @@ void dump(char *data_buffer, const unsigned int length) {
 void fatal(char *str){
 	printf("FATAL ERROR: %s", str);
 	exit(666);
-	
 }
 
 
@@ -82,14 +81,6 @@ int main(void) {
 	cmd_resp[n]=0;
 	pclose(cmd);
 	printf("> %s\r\n",cmd_resp);
-	
-		//while(recv_length > 0) {
-		//	printf("RECV: %d bytes\n", recv_length);
-		//	
-		//	dump(buffer, recv_length);
-		//	recv_length = recv(new_sockfd, &buffer, 1024, 0);
-		//	}
-	//send(new_sockfd, "response\n\r", 10, 0);
 	send(new_sockfd, cmd_resp, n, 0);
 	close(new_sockfd);
 	}

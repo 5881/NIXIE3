@@ -3,10 +3,6 @@
 #include "osapi.h"
 #include "gpio.h"
 #include "driver/uart.h"
-//#include "driver/uart.h"
-//#include "driver/spi.h"
-//#include "driver/spi_overlap.h"
-
 #include "espconn.h"
 #include "mem.h"
 #include "sntp.h"
@@ -16,60 +12,44 @@
 #define CS_UP()				gpio_output_set((1 << 5), 0, (1 << 5), 0);
 #define CS_DOWN()			gpio_output_set(0, (1 << 5), (1 << 5), 0);
 
-//#define spi_send(data)	spi_mast_byte_write(SPI, data)
 
-//#define http_port 8010
-//#define ip_addr "192.168.1.10" // Alien
-
-uint32_t time_cor=0; //поправка системного времени
 uint32_t	ntp_stamp;
 
 static struct station_config wifi_config;
 struct ip_info ipConfig;
-
 os_timer_t	sntp_timer, rtc_timer, led_timer, efect_timer;
-
 void ICACHE_FLASH_ATTR print_connect_status();
 void wifi_handle_event_cb(System_Event_t *evt);
 void ICACHE_FLASH_ATTR printf_local_time(void *arg);
 void ICACHE_FLASH_ATTR efect();
 void ICACHE_FLASH_ATTR indicate(char *data);
-void ICACHE_FLASH_ATTR user_check_sntp_stamp(void *arg){
-	
-	ntp_stamp = sntp_get_current_timestamp();
 
+void ICACHE_FLASH_ATTR user_check_sntp_stamp(void *arg){
+	ntp_stamp = sntp_get_current_timestamp();
 	if(ntp_stamp == 0){
 		os_timer_arm(&sntp_timer, 1000, 0);
 	} else{
 		os_timer_disarm(&sntp_timer);
 		os_printf("sntp: %d, %s",ntp_stamp, sntp_get_real_time(ntp_stamp));
-		//time_cor=system_get_time()/1e6;
-		//time format Sat Feb 15 22:16:45 2020
-		//set_ind(sntp_get_real_time(ntp_stamp));
 		os_printf("system time: %d\r\n",time_cor);
 		
 		os_timer_disarm(&sntp_timer);
         os_timer_setfn(&rtc_timer, (os_timer_func_t *)printf_local_time, NULL);
         os_timer_arm(&rtc_timer, 1000, 1);
 		wifi_station_disconnect(); //disconnect
-		//включаем индикацию
-		//os_timer_setfn(&led_timer, (os_timer_func_t *) indicate, NULL);
-		//os_timer_arm(&led_timer, 1, 1);
-		
+		}
 	}
-}
 
 void ICACHE_FLASH_ATTR printf_local_time(void *arg){
-char real_time_str[25];
-ntp_stamp++;
-os_memcpy(real_time_str,sntp_get_real_time(ntp_stamp),24);
-real_time_str[24]=0;
-if(!(ntp_stamp%60)) efect(); 
-indicate(real_time_str+11);//часы.минуты
-
-os_printf("LOCAL: %d, %s\r\n",ntp_stamp, real_time_str);
-os_printf("SYSTIME: %dus\r\n",system_get_time());
-}
+	char real_time_str[25];
+	ntp_stamp++;
+	os_memcpy(real_time_str,sntp_get_real_time(ntp_stamp),24);
+	real_time_str[24]=0;
+	if(!(ntp_stamp%60)) efect(); 
+	indicate(real_time_str+11);//часы.минуты
+	os_printf("LOCAL: %d, %s\r\n",ntp_stamp, real_time_str);
+	os_printf("SYSTIME: %dus\r\n",system_get_time());
+	}
 
 void ICACHE_FLASH_ATTR efect(){
 	char str[5]="00:00";
@@ -95,16 +75,11 @@ void ICACHE_FLASH_ATTR indicate(char *data){
 	spi_tx8(HSPI,(uint8_t)(temp&0xff));
 	while(spi_busy(HSPI));
 	CS_UP();
-}
+	}
 
 
 
-/******************************************************************************
- * FunctionName : user_init
- * Description  : entry of user application, init user function here
- * Parameters   : none
- * Returns      : none
-*******************************************************************************/
+
 void ICACHE_FLASH_ATTR user_init(void)
 {
 	// UART config
@@ -124,20 +99,15 @@ void ICACHE_FLASH_ATTR user_init(void)
     //os_printf("WIFI_0\r\n");
     if (wifi_set_opmode(STATION_MODE)) {
 		//os_printf("WIFI_0\r\n");
-	   
-	    wifi_station_disconnect();
+		wifi_station_disconnect();
 	    os_memcpy(wifi_config.ssid, SSID, sizeof(SSID));
     	os_memcpy(wifi_config.password, PASSWORD, sizeof(PASSWORD));
 	    wifi_config.bssid_set=0;
-
     	wifi_station_set_config(&wifi_config);
-    	
     	os_printf("WIFI\r\n");
 	} else
 		uart0_sendStr("ERROR: setting the station mode has failed.\r\n");
-	
-
-}
+	}
 
 void user_rf_pre_init(void)
 {
@@ -240,10 +210,6 @@ void wifi_handle_event_cb(System_Event_t *evt) {
         os_printf("disconnect from ssid %s, reason %d\r\n",
             evt->event_info.disconnected.ssid,
             evt->event_info.disconnected.reason);
-
-		//system_deep_sleep_instant(60000*1000);		// 60 sec
-		//system_deep_sleep_set_option(2);
-
         break;
     case    EVENT_STAMODE_AUTHMODE_CHANGE:
 		uart0_sendStr("EVENT_STAMODE_AUTHMODE_CHANGE\r\n");

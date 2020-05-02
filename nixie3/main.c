@@ -31,10 +31,7 @@ void ICACHE_FLASH_ATTR user_check_sntp_stamp(void *arg){
 	} else{
 		os_timer_disarm(&sntp_timer);
 		os_printf("sntp: %d, %s",ntp_stamp, sntp_get_real_time(ntp_stamp));
-		os_printf("system time: %d\r\n",time_cor);
-		
-		os_timer_disarm(&sntp_timer);
-        os_timer_setfn(&rtc_timer, (os_timer_func_t *)printf_local_time, NULL);
+		os_timer_setfn(&rtc_timer, (os_timer_func_t *)printf_local_time, NULL);
         os_timer_arm(&rtc_timer, 1000, 1);
 		wifi_station_disconnect(); //disconnect
 		}
